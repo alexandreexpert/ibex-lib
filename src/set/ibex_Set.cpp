@@ -138,6 +138,142 @@ void Set::save(const char* filename) {
 	os.close();
 }
 
+
+Vector Set::move_inside(const Vector& pt_in) const {
+	Vector pt(pt_in);
+	SetNode* node = root;
+	IntervalVector v(Rn);
+
+	while (!node->is_leaf()) {
+
+		SetBisect& b= *((SetBisect*) node);
+		
+		if (pt[b.var] < b.pt) {
+			// gauche
+			if (b.left->is_leaf() && (((SetLeaf*) b.left)->status==NO)) {
+				// il faut aller a droite
+				double pourcentage = (b.pt-pt[b.var])/(b.pt-v[b.var].lb());
+				v[b.var] =Interval(b.pt,v[b.var].ub());
+				pt[b.var] = b.pt + pourcentage*(v[b.var].ub()- b.pt);
+				node = b.right;
+
+			} else {
+				// on va a gauche
+				v[b.var] =Interval(v[b.var].lb(),b.pt);
+				node = b.left;
+			}
+		} else {
+			// droite
+			if (b.right->is_leaf() && (((SetLeaf*) b.right)->status==NO)) {
+				// il faut aller a gauche
+				double pourcentage = (pt[b.var]-b.pt)/(v[b.var].ub()-b.pt);
+				v[b.var] =Interval(v[b.var].lb(),b.pt);
+				pt[b.var] = b.pt - pourcentage*(b.pt-v[b.var].lb());
+				node = b.left;
+
+			} else {
+				// on va a droite
+				v[b.var] =Interval(b.pt,v[b.var].ub());
+				node = b.right;
+			}
+		}
+	}
+	return pt;
+}
+
+
+Vector Set::move_boundary(const Vector& pt_in) const {
+	Vector pt(pt_in);
+	SetNode* node = root; 
+	IntervalVector v(Rn);
+
+	while (!node->is_leaf()) {
+
+		SetBisect& b= *((SetBisect*) node);
+		
+		if (pt[b.var] < b.pt) {
+			// gauche
+			if (b.left->is_leaf() && (((SetLeaf*) b.left)->status==NO)){
+				if (b.right->is_leaf() && (((SetLeaf*) b.right)->status==MAYBE)){
+					v[b.var] = Interval(b.pt,v[b.var].ub());
+					pt[b.var] = v[b.var].ub();
+					node = b.right;
+				}
+				else {
+					v[b.var] = Interval(b.pt,v[b.var].ub());
+					pt[b.var] = b.pt;
+					node = b.right;
+				}
+			} /*else if (b.left->is_leaf() && (((SetLeaf*) b.left)->status==MAYBE)){
+				if (b.right->is_leaf() && (((SetLeaf*) b.right)->status==NO)) {
+					v[b.var] = Interval(v[b.var].lb(),b.pt);
+					pt[b.var] =v[b.var].lb();
+					node = b.left;
+				}
+				else {
+					v[b.var] = Interval(b.pt,v[b.var].ub());
+					pt[b.var] =b.pt;
+					node = b.right;	
+				}*/
+			else {
+				// on va a gauche
+				v[b.var] =Interval(v[b.var].lb(),b.pt);
+				node = b.left;
+			}
+		} else {
+			// droite
+			if (b.right->is_leaf() && (((SetLeaf*) b.right)->status==NO)) {
+				if (b.left->is_leaf() && (((SetLeaf*) b.left)->status==MAYBE)){
+					v[b.var] =Interval(v[b.var].lb(),b.pt);
+					pt[b.var] = v[b.var].lb();
+					node = b.left;	
+				}
+				else {
+					v[b.var] =Interval(v[b.var].lb(),b.pt);
+					pt[b.var] = b.pt;
+					node = b.left;	
+				}
+			} /*else if (b.right->is_leaf() && (((SetLeaf*) b.right)->status==MAYBE)) {
+				if (b.left->is_leaf() && (((SetLeaf*) b.left)->status==NO)) {
+					v[b.var] = Interval(b.pt,v[b.var].ub());
+					pt[b.var] =v[b.var].ub();
+					node = b.right;
+				}
+				else {
+					v[b.var] =Interval(v[b.var].lb(),b.pt);
+					pt[b.var] = b.pt;
+					node = b.left;	
+				}*/
+			 else {
+				// on va a droite
+				v[b.var] =Interval(b.pt,v[b.var].ub());
+				node = b.right;
+			}
+		}
+	}
+	return pt;
+}
+
+BoolInterval Set::contains(const Vector& pt) const {
+	SetNode* node = root;
+	IntervalVector v(Rn);
+	while (!node->is_leaf()) {
+		SetBisect& b= *((SetBisect*) node);
+
+		if (pt[b.var] < b.pt) {
+			// gauche
+			v[b.var] =Interval(v[b.var].lb(),b.pt);
+			node = b.left;
+		} else {
+			// on va a droite
+			v[b.var] =Interval(b.pt,v[b.var].ub());
+			node = b.right;
+		}
+	}
+	return ((SetLeaf*) node)->status;
+}
+
+
 void Set::load(const char* filename) {
 
 	std::ifstream is;

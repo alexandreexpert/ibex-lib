@@ -29,6 +29,8 @@ namespace ibex {
  */
 class Set {
 public:
+	
+	SetNode* root;
 
 	/**
 	 * \brief Creates a n-dimensional set (-oo,oo)x...x(-oo,oo)
@@ -61,6 +63,16 @@ public:
 	 * \brief Build the set from a system of constraints.
 	 */
 	Set(const System& sys, double eps);
+	
+		/**
+	 * \brief Find a point inside the domain "near" the point "pt_in"
+	 */
+	Vector move_inside(const Vector& pt_in) const;
+	
+	Vector move_boundary(const Vector& pt_in) const;
+
+	BoolInterval contains(const Vector& pt) const;
+
 
 	/*
 	 * \brief Delete this
@@ -104,6 +116,8 @@ public:
 	 * \brief Visit the set
 	 */
 	void visit(SetVisitor& visitor) const;
+	
+	//SetNode* get_root();
 
 	/**
 	 * \brief Distance of the point "pt" wrt the set (if inside is true)
@@ -154,7 +168,7 @@ protected:
 	 *
 	 * NULL means no existing set (warning: different from empty set!)
 	 */
-	SetNode* root;
+	//SetNode* root;
 
 	/**
 	 * (-oo,oo)x..x(-oo,oo)
